@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>残業時間計算機</title>
+<style>
+  :root{
+    --ink:#1c2b3a;
+    --ink-soft:#4a5c6e;
+    --paper:#f6f4ee;
+    --card:#ffffff;
+    --line:#dcd8cc;
+    --amber:#c9762f;
+    --amber-soft:#f4e3d0;
+    --ok:#3c6e58;
+    --warn-bg:#fdf1e0;
+    --warn-line:#e3a94a;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+    line-height:1.6;
+    padding:20px 14px 60px;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+
+  header{margin-bottom:20px;}
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:.14em;
+    color:var(--amber);
+    font-weight:700;
+    text-transform:uppercase;
+  }
+  h1{
+    font-size:26px;
+    margin:4px 0 2px;
+    font-weight:800;
+    letter-spacing:.01em;
+  }
+  .sub{font-size:13px;color:var(--ink-soft);}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px;
+    margin-bottom:16px;
+    box-shadow:0 1px 2px rgba(28,43,58,0.04);
+  }
+  .card h2{
+    font-size:13px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .card h2 .num{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:20px;height:20px;
+    border-radius:6px;
+    background:var(--amber-soft);
+    color:var(--amber);
+    font-size:11px;
+    font-weight:800;
+  }
+
+  .field{margin-bottom:14px;}
+  .field:last-child{margin-bottom:0;}
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    margin-bottom:6px;
+    color:var(--ink);
+  }
+  .hint{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+
+  input[type=date], input[type=time], input[type=number]{
+    width:100%;
+    padding:11px 12px;
+    font-size:16px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    background:#fffdf9;
+    color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  input:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:var(--amber);}
+
+  .toggle{
+    display:flex;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .toggle button{
+    flex:1;
+    padding:11px 0;
+    font-size:15px;
+    font-weight:700;
+    background:#fffdf9;
+    border:none;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .toggle button + button{border-left:1.5px solid var(--line);}
+  .toggle button.active{background:var(--ink);color:#fff;}
+
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  details.adv{margin-top:6px;}
+  details.adv summary{
+    cursor:pointer;font-size:12.5px;color:var(--amber);font-weight:700;
+    list-style:none;
+  }
+  details.adv summary::-webkit-details-marker{display:none;}
+  details.adv summary::before{content:"▸ ";}
+  details.adv[open] summary::before{content:"▾ ";}
+  details.adv .field{margin-top:12px;}
+
+  /* 結果 */
+  .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .stat{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+  }
+  .stat .k{font-size:11.5px;color:var(--ink-soft);margin-bottom:2px;}
+  .stat .v{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;}
+  .stat.hero{
+    grid-column:1 / -1;
+    background:linear-gradient(135deg,var(--amber-soft),#fff);
+    border-color:var(--amber);
+  }
+  .stat.hero .v{font-size:30px;color:var(--amber);}
+  .stat.hero .k{color:#a3601f;font-weight:700;}
+
+  .warn{
+    background:var(--warn-bg);
+    border:1px solid var(--warn-line);
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:13px;
+    font-weight:600;
+    margin-bottom:14px;
+    display:flex;
+    gap:8px;
+  }
+  .warn span.ico{flex-shrink:0;}
+
+  .warn-details{margin-bottom:16px;}
+  .warn-details summary{
+    cursor:pointer;
+    list-style:none;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+    background:#efece3;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 14px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .warn-details summary::-webkit-details-marker{display:none;}
+  .warn-details summary::before{content:"⚠";}
+  .warn-details[open] summary{border-radius:10px 10px 0 0;margin-bottom:0;}
+  .warn-details .warn-inner{
+    border:1px solid var(--line);
+    border-top:none;
+    border-radius:0 0 10px 10px;
+    padding:12px 14px 4px;
+  }
+  .warn-details .warn{margin-bottom:10px;}
+
+  /* 簡易チェック */
+  .check-box{
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:13px;
+    font-weight:700;
+    margin-bottom:14px;
+    display:none;
+    align-items:center;
+    gap:8px;
+  }
+  .check-box.show{display:flex;}
+  .check-box.level-caution{background:var(--warn-bg);border:1px solid var(--warn-line);color:#8a5a10;}
+  .check-box.level-error{background:#fdeaea;border:1px solid #e07a7a;color:#a12f2f;}
+
+  /* 転記画面へボタン */
+  .jump-btn{
+    display:block;
+    width:100%;
+    text-align:center;
+    background:var(--ink);
+    color:#fff;
+    font-size:15px;
+    font-weight:800;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    margin:6px 0 22px;
+    cursor:pointer;
+    text-decoration:none;
+  }
+  .jump-btn:active{opacity:.85;}
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--amber);
+    text-decoration:none;
+    margin-bottom:10px;
+  }
+
+  /* 転記プレビュー（原紙風の表） */
+  .form-table{
+    border:2px solid var(--ink);
+    border-radius:2px;
+    overflow:hidden;
+    font-size:16px;
+  }
+  .form-row{display:flex;border-top:1.5px solid var(--ink);}
+  .form-row:first-child{border-top:none;}
+  .form-label{
+    width:88px;flex-shrink:0;
+    background:#efece3;
+    display:flex;align-items:center;justify-content:center;
+    text-align:center;
+    font-weight:700;font-size:13px;
+    padding:8px 4px;
+    border-right:1.5px solid var(--ink);
+  }
+  .form-value{
+    flex:1;
+    display:flex;align-items:center;justify-content:center;
+    gap:8px;
+    padding:14px 8px;
+    font-weight:800;
+    font-size:19px;
+    font-variant-numeric:tabular-nums;
+    flex-wrap:wrap;
+  }
+  .form-value.date{font-size:22px;}
+  .form-value .box{
+    background:#fbfaf6;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    padding:6px 12px;
+    min-width:44px;
+    font-size:24px;
+    text-align:center;
+  }
+  .form-value .tilde{color:var(--ink-soft);font-size:20px;}
+  .form-value .check{font-size:16px;}
+  .form-value .decimal{
+    margin-left:auto;
+    color:var(--ink-soft);
+    font-size:14px;
+    font-weight:600;
+  }
+  .form-note{font-size:11.5px;color:var(--ink-soft);margin-top:8px;}
+
+  .section-title{
+    font-size:14px;font-weight:800;margin:26px 0 10px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .section-title .tag{
+    font-size:10.5px;font-weight:700;color:#fff;
+    background:var(--ink);
+    padding:2px 8px;border-radius:100px;
+  }
+
+  footer{
+    margin-top:28px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    border-top:1px solid var(--line);
+    padding-top:14px;
+  }
+  footer p{margin:4px 0;}
+
+  /* ===== PC幅レイアウト ===== */
+  @media (min-width:860px){
+    body{padding:36px 24px 70px;}
+    .wrap{max-width:960px;}
+    h1{font-size:32px;}
+    .sub{font-size:14px;}
+
+    .grid-top{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+      gap:20px;
+      align-items:start;
+    }
+    .grid-top .card{margin-bottom:0;}
+
+
+
+    .grid-preview{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+      gap:0 22px;
+      align-items:start;
+    }
+    .grid-preview .preview-item{min-width:0;}
+    .grid-preview .card{margin-bottom:0;}
+
+    .card{padding:22px;}
+  }
+
+  @media (min-width:1180px){
+    .wrap{max-width:1080px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="top">
+
+  <header>
+    <div class="eyebrow">Sumire &middot; Overtime Tool</div>
+    <h1>残業時間計算機</h1>
+    <div class="sub">出退勤時刻を入れると、残業時間と申請書・報告書への転記内容を自動計算します。</div>
+  </header>
+
+  <div class="grid-top">
+  <!-- 入力 -->
+  <div class="card">
+    <h2><span class="num">1</span>入力</h2>
+
+    <div class="field">
+      <label>勤務区分</label>
+      <div class="toggle">
+        <button type="button" id="btnDay" class="active">日勤</button>
+        <button type="button" id="btnNight">夜勤</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="workDate">勤務日</label>
+      <input type="date" id="workDate">
+      <div class="hint">夜勤も出勤日（当日）を入力します</div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label for="startTime">出勤時刻</label>
+        <input type="time" id="startTime" value="09:00">
+      </div>
+      <div class="field">
+        <label for="endTime">退勤時刻</label>
+        <input type="time" id="endTime" value="18:00">
+      </div>
+    </div>
+    <div class="hint" style="margin-top:-8px;margin-bottom:14px;">日付をまたぐ場合も時刻だけでOK（翌朝6時なら「06:00」）</div>
+
+    <div class="field">
+      <label for="breakMin">休憩時間（分）</label>
+      <input type="number" id="breakMin" value="60" min="0" step="5">
+      <div class="hint">日勤は60分・夜勤は120分が初期値です（勤務区分を切り替えると自動で入ります。手入力後は上書きされません）</div>
+    </div>
+
+    <details class="adv">
+      <summary>所定労働時間の設定</summary>
+      <div class="field">
+        <label for="stdDayHours">所定労働時間（日勤・時間）</label>
+        <input type="number" id="stdDayHours" value="8" min="0" step="0.25">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="nightStart">所定夜勤開始</label>
+          <input type="time" id="nightStart" value="16:30">
+        </div>
+        <div class="field">
+          <label for="nightEnd">所定夜勤終了</label>
+          <input type="time" id="nightEnd" value="09:30">
+        </div>
+      </div>
+      <div class="hint">夜勤は休憩が毎回固定である前提で、所定終了時刻を過ぎた分を残業として計算します。</div>
+    </details>
+  </div>
+
+  <!-- 計算結果 -->
+  <div class="card">
+    <h2><span class="num">2</span>計算結果</h2>
+    <div class="result-grid">
+      <div class="stat"><div class="k">実働時間</div><div class="v" id="rWork">–</div></div>
+      <div class="stat"><div class="k">所定労働時間</div><div class="v" id="rStd">–</div></div>
+      <div class="stat hero"><div class="k">残業時間</div><div class="v" id="rOT">–</div></div>
+      <div class="stat"><div class="k">残業した時間帯</div><div class="v" id="rOTRange" style="font-size:15px;">–</div></div>
+      <div class="stat"><div class="k">深夜時間（22:00〜5:00）</div><div class="v" id="rNight">–</div></div>
+      <div class="stat"><div class="k">日付またぎ</div><div class="v" id="rCross" style="font-size:15px;">–</div></div>
+    </div>
+    <div class="check-box level-caution" id="checkBreak">⚠ 休憩が0分になっています。入力を忘れていませんか？</div>
+    <div class="check-box level-error" id="checkLong">⚠ 拘束時間が24時間を超えています。出勤・退勤時刻を確認してください。</div>
+    <div class="check-box level-caution" id="checkZero">⚠ 退勤時刻が出勤時刻と同じです。時刻を確認してください。</div>
+  </div>
+  </div><!-- /grid-top -->
+
+  <a href="#previewTop" class="jump-btn" id="jumpBtn">↓ この内容で転記プレビューを見る</a>
+
+  <details class="warn-details">
+    <summary>注意書き（タップで開く）</summary>
+    <div class="warn-inner">
+      <div class="warn"><span class="ico">⚠</span><span>夜勤明けの残業でも、「残業日」欄には出勤日（前日）を記入します。実際の時刻が翌日になっても変わりません。</span></div>
+      <div class="warn"><span class="ico">⚠</span><span>「残業日と時間数」欄の時刻は、出退勤の全時間ではなく「残業した時間帯」だけを記入します。</span></div>
+    </div>
+  </details>
+
+  <div id="previewTop"></div>
+  <div class="grid-preview">
+  <div class="preview-item">
+  <!-- 申請書プレビュー -->
+  <div class="section-title"><span class="tag">申請書</span>「残業日と時間数」欄　転記プレビュー</div>
+  <div class="card" style="padding:14px;">
+    <div class="form-table">
+      <div class="form-row">
+        <div class="form-label">残業日と<br>時間数</div>
+        <div style="flex:1;">
+          <div class="form-value date" id="pDate1">–</div>
+          <div class="form-row" style="border-top:1px solid var(--ink);margin:0;">
+            <div class="form-value" id="pTime1">
+              <span class="check" id="pAmPm1">–</span>
+              <span class="box" id="pSH1">–</span>時
+              <span class="box" id="pSM1">–</span>分
+              <span class="tilde">〜</span>
+              <span class="box" id="pEH1">–</span>時
+              <span class="box" id="pEM1">–</span>分
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-note">※ 実際の時刻をそのまま記入。日付をまたいでも「残業日」は出勤日のまま変わりません。</div>
+  </div>
+  </div><!-- /preview-item 申請書 -->
+
+  <div class="preview-item">
+  <!-- 報告書プレビュー -->
+  <div class="section-title"><span class="tag">報告書</span>「残業日と時間数／超過／深夜」欄　転記プレビュー</div>
+  <div class="card" style="padding:14px;">
+    <div class="form-table">
+      <div class="form-row">
+        <div class="form-label">残業日と<br>時間数</div>
+        <div style="flex:1;">
+          <div class="form-value date" id="pDate2">–</div>
+          <div class="form-row" style="border-top:1px solid var(--ink);margin:0;">
+            <div class="form-value" id="pTime2">
+              <span class="check" id="pAmPm2">–</span>
+              <span class="box" id="pSH2">–</span>時
+              <span class="box" id="pSM2">–</span>分
+              <span class="tilde">〜</span>
+              <span class="box" id="pEH2">–</span>時
+              <span class="box" id="pEM2">–</span>分
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-label">超過</div>
+        <div class="form-value" id="pOver">
+          <span class="box" id="pOverH">–</span>時間
+          <span class="box" id="pOverM">–</span>分
+          <span class="decimal" id="pOverDec">–</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-label">深夜</div>
+        <div class="form-value" id="pNight">
+          <span class="box" id="pNightH">–</span>時間
+          <span class="box" id="pNightM">–</span>分
+          <span class="decimal" id="pNightDec">–</span>
+        </div>
+      </div>
+    </div>
+    <div class="form-note">※ 深夜勤務は午後10時(22:00)〜午前5時(5:00)。「残業した時間帯」のうち、この枠にかかった分だけをカウントします。</div>
+  </div>
+  </div><!-- /preview-item 報告書 -->
+  </div><!-- /grid-preview -->
+
+  <a href="#top" class="back-link">↑ 入力に戻る</a>
+
+  <footer>
+    <p><strong>日付の使い分け：</strong>申請書・報告書「上部」の日付＝提出日。上の表内の「残業日」＝出勤日（夜勤明けでも前日扱い）。</p>
+    <p>すみれ 業務用ツール（オフライン計算・データは保存されません）</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+
+  const btnDay = $('btnDay'), btnNight = $('btnNight');
+  let shiftType = 'day';
+
+  const breakInput = $('breakMin');
+  let breakTouched = false; // ユーザーが手動で休憩時間を変更したら自動切り替えをやめる
+  breakInput.addEventListener('input', () => { breakTouched = true; });
+
+  btnDay.addEventListener('click', () => {
+    shiftType='day'; btnDay.classList.add('active'); btnNight.classList.remove('active');
+    if(!breakTouched) breakInput.value = 60;
+    calc();
+  });
+  btnNight.addEventListener('click', () => {
+    shiftType='night'; btnNight.classList.add('active'); btnDay.classList.remove('active');
+    if(!breakTouched) breakInput.value = 120;
+    calc();
+  });
+
+  // 初期日付
+  const today = new Date();
+  $('workDate').value = today.toISOString().slice(0,10);
+
+  ['workDate','startTime','endTime','breakMin','stdDayHours','nightStart','nightEnd'].forEach(id=>{
+    $(id).addEventListener('input', calc);
+  });
+
+  function toMinutes(hhmm){
+    const [h,m] = hhmm.split(':').map(Number);
+    return h*60+m;
+  }
+  function fmtHM(totalMin){
+    totalMin = Math.round(totalMin);
+    const sign = totalMin < 0 ? '-' : '';
+    totalMin = Math.abs(totalMin);
+    const h = Math.floor(totalMin/60), m = totalMin%60;
+    return `${sign}${h}:${String(m).padStart(2,'0')}`;
+  }
+  function pad2(n){ return String(n).padStart(2,'0'); }
+
+  // 重なり(分) 2区間の共通部分を分単位で
+  function overlapMin(aStart,aEnd,bStart,bEnd){
+    return Math.max(0, Math.min(aEnd,bEnd) - Math.max(aStart,bStart));
+  }
+
+  // 令和年計算
+  function reiwa(dateObj){
+    const y = dateObj.getFullYear();
+    const reiwaStart = new Date(2019,4,1); // 2019-05-01
+    if(dateObj < reiwaStart){ return null; }
+    return y - 2018;
+  }
+  const weekdayKanji = ['日','月','火','水','木','金','土'];
+
+  function calc(){
+    const startStr = $('startTime').value || '00:00';
+    const endStr   = $('endTime').value   || '00:00';
+    const breakMin = Number($('breakMin').value)||0;
+    const stdDayMin = Number($('stdDayHours').value||8)*60;
+    const nightStartStr = $('nightStart').value || '16:30';
+    const nightEndStr   = $('nightEnd').value   || '09:30';
+
+    let start = toMinutes(startStr);
+    let end   = toMinutes(endStr);
+    let crossed = false;
+    if(end < start){ end += 1440; crossed = true; }
+
+    const workMin = (end - start) - breakMin; // 実働
+
+    // 所定労働時間（適用値）
+    let stdMin;
+    if(shiftType === 'night'){
+      let ns = toMinutes(nightStartStr);
+      let ne = toMinutes(nightEndStr);
+      if(ne < ns){ ne += 1440; }
+      stdMin = (ne - ns) - breakMin;
+    } else {
+      stdMin = stdDayMin;
+    }
+
+    const otMin = Math.max(0, workMin - stdMin);
+
+    // 残業した時間帯 = [end - otMin, end]（0-1440に正規化して表示）
+    let otStartAbs = end - otMin;
+    let otEndAbs = end;
+    const otStartTod = ((otStartAbs % 1440)+1440)%1440;
+    const otEndTod = ((otEndAbs % 1440)+1440)%1440;
+
+    // 深夜(22:00-翌5:00) と 残業時間帯 の重なり
+    let otS = otStartAbs, otE = otEndAbs;
+    if(otE < otS) otE += 1440;
+    // window1: 22:00-29:00 (同日22:00〜翌5:00), window2: +1日ぶん
+    const night1 = overlapMin(otS,otE, 22*60, 29*60);
+    const night2 = overlapMin(otS,otE, 22*60+1440, 29*60+1440);
+    const nightMin = night1+night2;
+
+    // 表示更新
+    $('rWork').textContent = fmtHM(workMin);
+    $('rStd').textContent = fmtHM(stdMin);
+    $('rOT').textContent = fmtHM(otMin);
+    $('rNight').textContent = fmtHM(nightMin);
+    $('rCross').textContent = crossed ? 'あり（翌日扱い）' : 'なし';
+
+    const otSH = Math.floor(otStartTod/60), otSM = otStartTod%60;
+    const otEH = Math.floor(otEndTod/60), otEM = otEndTod%60;
+    $('rOTRange').textContent = otMin>0 ? `${otSH}:${pad2(otSM)} 〜 ${otEH}:${pad2(otEM)}` : '（残業なし）';
+
+    // 簡易チェック
+    const boundMin = end - start; // 拘束時間（休憩込み）
+    $('checkBreak').classList.toggle('show', breakMin === 0);
+    $('checkLong').classList.toggle('show', boundMin >= 24*60);
+    $('checkZero').classList.toggle('show', boundMin === 0);
+
+    // 日付＆令和表示
+    const wd = $('workDate').value ? new Date($('workDate').value+'T00:00:00') : today;
+    const rw = reiwa(wd);
+    const dateLabel = rw
+      ? `令和${rw}年　${wd.getMonth()+1}月　${wd.getDate()}日　(${weekdayKanji[wd.getDay()]})`
+      : `${wd.getFullYear()}年　${wd.getMonth()+1}月　${wd.getDate()}日　(${weekdayKanji[wd.getDay()]})`;
+    $('pDate1').textContent = dateLabel;
+    $('pDate2').textContent = dateLabel;
+
+    const amPm = otMin>0 ? (otStartTod < 12*60 ? '☑午前　□午後' : '□午前　☑午後') : '（残業なし）';
+    $('pAmPm1').textContent = amPm;
+    $('pAmPm2').textContent = amPm;
+
+    $('pSH1').textContent=$('pSH2').textContent = otSH;
+    $('pSM1').textContent=$('pSM2').textContent = pad2(otSM);
+    $('pEH1').textContent=$('pEH2').textContent = otEH;
+    $('pEM1').textContent=$('pEM2').textContent = pad2(otEM);
+
+    const otH = Math.floor(otMin/60), otM = otMin%60;
+    $('pOverH').textContent = otH;
+    $('pOverM').textContent = pad2(otM);
+    $('pOverDec').textContent = (otMin/60).toFixed(1)+'時間';
+
+    const nH = Math.floor(nightMin/60), nM = nightMin%60;
+    $('pNightH').textContent = nH;
+    $('pNightM').textContent = pad2(nM);
+    $('pNightDec').textContent = (nightMin/60).toFixed(1)+'時間';
+  }
+
+  calc();
+})();
+</script>
+</body>
+</html>
